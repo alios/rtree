@@ -22,8 +22,6 @@ data Rectangle =
 makeClassy ''Rectangle
 
 
-
-
 mkRectangle' :: Double -> Double -> Double -> Double -> Rectangle
 mkRectangle' x1 y1 x2 y2 =
   let top = max y1 y2
@@ -59,21 +57,31 @@ rectWidth r  = abs $ (r ^. topLeft . x) - (r ^. bottomRight . x)
 rectHeight r = abs $ (r ^. topLeft . y) - (r ^. bottomRight . y)
 rectArea r = (rectWidth r) * (rectHeight r)
 
-rectAreaGrow :: (HasRectangle r1, HasRectangle r2) => r1 -> r2 -> Double
-rectAreaGrow a b = (rectArea ((a ^. rectangle) `mappend` (b ^.rectangle))) - rectArea (a ^. rectangle)
+rect4points :: (HasRectangle r) => r -> [Point]
+rect4points r =
+  let tl = r ^. topLeft
+      br = r ^. bottomRight
+      tr = tl { _x = (tl ^. x) + rectWidth r }
+      bl = br { _x = (tl ^. x) - rectWidth r }
+  in [tl, tr, bl, br]
+
+pointInRect :: (HasRectangle r) => r -> Point ->  Bool
+pointInRect r p =
+  let lx = r ^. topLeft . x
+      ty = r ^. topLeft . y
+      rx = r ^. bottomRight . x
+      by = r ^. bottomRight . y
+      px = p ^. x
+      py = p ^. y
+  in (px >= lx) && (px <= rx) && (py >= by) && (py <= ty)
+
 
 rectangleIn :: (HasRectangle r1, HasRectangle r2) => r1 -> r2 -> Bool
-rectangleIn r1 r2 =
-  let r1left   = r1 ^. topLeft . x
-      r1top    = r1 ^. topLeft . y
-      r1right  = r1 ^. bottomRight . x
-      r1bottom = r1 ^. bottomRight . y
-      r2left   = r2 ^. topLeft . x
-      r2top    = r2 ^. topLeft . y
-      r2right  = r2 ^. bottomRight . x
-      r2bottom = r2 ^. bottomRight . y
-  in not (r2left > r1right || r2right < r1left || r2top <= r1bottom || r2bottom >= r1top)
+rectangleIn ra = any (pointInRect ra) . rect4points
 
+
+rectAreaGrow :: (HasRectangle r1, HasRectangle r2) => r1 -> r2 -> Double
+rectAreaGrow a b = (rectArea ((a ^. rectangle) `mappend` (b ^.rectangle))) - rectArea (a ^. rectangle)
 
 point2Rectangle :: Point -> Rectangle
 point2Rectangle p = mkRectangle p p

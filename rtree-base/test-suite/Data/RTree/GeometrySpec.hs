@@ -46,6 +46,14 @@ spec = parallel $ do
     prop "mappend never results in smaller rectangle " $
       \(ra :: Rectangle)(rb :: Rectangle) ->
        ((rectArea $ mappend ra rb) >= rectArea ra) && ((rectArea $ mappend ra rb) >= rectArea ra)
+    prop "is always recangleIn it self" $
+      \(r :: Rectangle) -> rectangleIn r r
+    prop "rectAreaGrow is always positive" $
+      \(ra :: Rectangle) (rb :: Rectangle) -> (rectAreaGrow ra rb) >= 0
+
+
+
+
 
 t = hspec spec
 
