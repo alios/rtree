@@ -15,20 +15,13 @@ data Point =
         } deriving (Show, Read, Eq, Ord, Typeable, Data)
 makeClassy ''Point
 
-
-point2Rectangle :: Point -> Rectangle
-point2Rectangle p = Rectangle p p
-
-pointZero :: Point
-pointZero = Point 0 0
-
 data Rectangle =
   Rectangle { _topLeft     :: Point
             , _bottomRight :: Point
             } deriving (Show, Read, Eq, Ord, Typeable, Data)
 makeClassy ''Rectangle
 
-
+mkRectangle :: Point -> Point -> Rectangle
 mkRectangle a b =
   let axlt = (a ^. x) <= (b ^. x)
       aylt = (a ^. y) > (b ^. y)
@@ -68,9 +61,6 @@ rectArea r = (rectWidth r) * (rectHeight r)
 rectAreaGrow :: (HasRectangle r1, HasRectangle r2) => r1 -> r2 -> Double
 rectAreaGrow a b = (rectArea ((a ^. rectangle) `mappend` (b ^.rectangle))) - rectArea (a ^. rectangle)
 
-rectangleZero :: Rectangle
-rectangleZero = point2Rectangle pointZero
-
 rectangleIn :: (HasRectangle r1, HasRectangle r2) => r1 -> r2 -> Bool
 rectangleIn r1 r2 =
   let r1left   = r1 ^. topLeft . x
@@ -83,3 +73,12 @@ rectangleIn r1 r2 =
       r2bottom = r2 ^. bottomRight . y
   in not (r2left > r1right || r2right < r1left || r2top <= r1bottom || r2bottom >= r1top)
 
+
+point2Rectangle :: Point -> Rectangle
+point2Rectangle p = mkRectangle p p
+
+pointZero :: Point
+pointZero = Point 0 0
+
+rectangleZero :: Rectangle
+rectangleZero = point2Rectangle pointZero
