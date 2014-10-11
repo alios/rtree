@@ -65,12 +65,8 @@ rectWidth r = (r ^. bottomRight . x) - (r ^. topLeft . y)
 rectHeight r = (r ^. topLeft . y) - (r ^. bottomRight . y)
 rectArea r = (rectWidth r) * (rectHeight r)
 
-
-
-rectAreaGrow :: Rectangle -> Rectangle -> Double
-rectAreaGrow a b = (rectArea (a `mappend` b)) - rectArea a
-
-
+rectAreaGrow :: (HasRectangle r1, HasRectangle r2) => r1 -> r2 -> Double
+rectAreaGrow a b = (rectArea ((a ^. rectangle) `mappend` (b ^.rectangle))) - rectArea (a ^. rectangle)
 
 rectangleZero :: Rectangle
 rectangleZero = point2Rectangle pointZero

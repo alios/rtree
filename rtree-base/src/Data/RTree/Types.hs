@@ -5,15 +5,17 @@
 {-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE PolyKinds              #-}
+{-# LANGUAGE Rank2Types             #-}
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TypeFamilies           #-}
 
 module Data.RTree.Types where
 
 import           Control.Lens
+import           Data.Data
 import           Data.RTree.Geometry
 import           Data.Text           (Text)
-
+import           Data.Typeable
 
 class RTreeAlgo a where
   locatePage :: (RTreeBackend b m, HasRectangle bbox) => a ->  b -> bbox -> m (RTreePageKey b t)
@@ -34,7 +36,7 @@ data RTreePage b t =
               , _pageChildren    :: [RTreePageKey b t]
               , _pageRTreeName   :: Text
               , _pageBoundingBox :: Rectangle
-              }
+              } deriving (Typeable)
 makeClassy ''RTreePage
 
 instance HasRectangle (RTreePage b t) where
@@ -45,6 +47,6 @@ data RTree b a (m :: * -> *) t =
           , _rTreeAlgo     :: a
           , _rTreeName     :: Text
           , _rTreeRootNode :: RTreePageKey b t
-          }
+          } deriving (Typeable)
 makeClassy ''RTree
 

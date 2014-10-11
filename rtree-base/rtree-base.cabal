@@ -57,11 +57,13 @@ library
   -- other-modules:       
   
   -- LANGUAGE extensions used by modules in this package.
-  other-extensions:    DeriveDataTypeable, 
+  other-extensions:    DeriveDataTypeable,
+                       FlexibleContexts, 
                        FlexibleInstances, 
                        FunctionalDependencies, 
                        GADTs, 
                        MultiParamTypeClasses, 
+                       OverloadedStrings,
                        PolyKinds, 
                        TemplateHaskell, 
                        TypeFamilies

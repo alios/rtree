@@ -12,7 +12,6 @@ import           Data.RTree.Types
 import           Data.Text           (Text)
 
 class (RTreeBackend b m, RTreeAlgo a) => RTreeFrontend b a m | b -> m where
-  rTreeLoad :: Text -> m (RTree b a m t)
   rTreeCreate :: b -> a -> Text -> m (RTree b a m t)
   rTreeCreate b a name =
     let  rootPage :: RTreePage b t
@@ -29,7 +28,6 @@ class (RTreeBackend b m, RTreeAlgo a) => RTreeFrontend b a m | b -> m where
                    , _rTreeRootNode = rootNodeId
                    }
     in pageInsert b rootPage >>= return . rtree
-  rTreeDestroy :: RTree b a m t -> m Bool
   rTreeInsert :: (HasRectangle t) => RTree b a m t -> t -> m (RTreePageKey b t)
   rTreeInsert tr obj =
     let a = tr ^. rTreeAlgo
@@ -46,7 +44,6 @@ class (RTreeBackend b m, RTreeAlgo a) => RTreeFrontend b a m | b -> m where
           pageSetBoundingBox b leafPageId $
             (leafPage ^. rectangle) `mappend` (obj ^. rectangle)
           return pId
-  rTreeDelete :: RTree b a m t -> RTreePageKey b t -> m Bool
   rTreeQuery :: (HasRectangle bbox) => RTree b a m t -> bbox -> m [t]
   rTreeQuery tr bbox =
     let b = tr ^. rTreeBackend
@@ -62,11 +59,9 @@ class (RTreeBackend b m, RTreeAlgo a) => RTreeFrontend b a m | b -> m where
     in do
       rp <- pageGet b $ tr ^. rTreeRootNode
       rTreeQuery' rp
-
-
-
-data RTreeStar = RTreeStar
-instance RTreeAlgo RTreeStar where
+  rTreeLoad :: Text -> m (RTree b a m t)
+  rTreeDestroy :: RTree b a m t -> m Bool
+  rTreeDelete :: RTree b a m t -> RTreePageKey b t -> m Bool
 
 
 
