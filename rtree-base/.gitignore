@@ -1,0 +1,12 @@
+dist*
+*.hi
+*.o
+.hsenv*
+.cabal-sandbox
+cabal.sandbox.config
+.DS_Store
+*.swp
+*_flymake.hs
+TAGS
+.#*
+
