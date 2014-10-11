@@ -21,21 +21,22 @@ data Rectangle =
             } deriving (Show, Read, Eq, Ord, Typeable, Data)
 makeClassy ''Rectangle
 
+
+
+
+mkRectangle' :: Double -> Double -> Double -> Double -> Rectangle
+mkRectangle' x1 y1 x2 y2 =
+  let top = max y1 y2
+      bottom = min y1 y2
+      right = max x1 x2
+      left = min x1 x2
+      tl = Point { _y = top, _x = left}
+      br = Point { _y = bottom, _x = right}
+  in Rectangle { _topLeft = tl, _bottomRight = br}
+
 mkRectangle :: Point -> Point -> Rectangle
-mkRectangle a b =
-  let axlt = (a ^. x) <= (b ^. x)
-      aylt = (a ^. y) > (b ^. y)
-  in case (axlt, aylt) of
-       (True, True) -> Rectangle a b
-       (False, False) -> Rectangle b a
-       (True, False) ->
-         let height = abs $ (a ^. y) - (b ^. y)
-         in Rectangle { _topLeft = a { _y = (a ^. y) + height }
-                      , _bottomRight = b { _y = (b ^. y) - height }}
-       (False, True) ->
-         let width = abs $ (a ^. x) - (b ^. x)
-         in Rectangle { _topLeft = b { _x = (b ^. x) + width }
-                      , _bottomRight = a { _x = (a ^. x) - width }}
+mkRectangle a b = mkRectangle' (a ^. x) (a ^. y) (b ^. x) (b ^. y)
+
 
 instance Monoid Rectangle where
   mempty = rectangleZero
@@ -54,8 +55,8 @@ instance Monoid Rectangle where
 
 
 rectWidth, rectHeight, rectArea :: HasRectangle r => r -> Double
-rectWidth r = (r ^. bottomRight . x) - (r ^. topLeft . y)
-rectHeight r = (r ^. topLeft . y) - (r ^. bottomRight . y)
+rectWidth r  = abs $ (r ^. topLeft . x) - (r ^. bottomRight . x)
+rectHeight r = abs $ (r ^. topLeft . y) - (r ^. bottomRight . y)
 rectArea r = (rectWidth r) * (rectHeight r)
 
 rectAreaGrow :: (HasRectangle r1, HasRectangle r2) => r1 -> r2 -> Double

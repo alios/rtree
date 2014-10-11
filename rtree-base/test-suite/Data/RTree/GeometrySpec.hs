@@ -12,7 +12,7 @@ import           Test.QuickCheck.Arbitrary
 instance Arbitrary Point where
   arbitrary = do
     (a,b) <- arbitrary
-    return $ Point a b
+    return $ Point (a*10)  (b * 100)
 
 instance Arbitrary Rectangle where
   arbitrary = do
@@ -31,11 +31,14 @@ spec = parallel $ do
       \pa pb -> Rectangle { _topLeft = pa, _bottomRight = pb } ^. topLeft == pa
     prop "bottomRight lens returns _bottomRight" $
       \pa pb -> Rectangle { _topLeft = pa, _bottomRight = pb } ^. bottomRight == pb
-    prop "foo" $
+    prop "topLeft, bottomRight based rectangle" $
       \(r :: Rectangle) ->
        let tl = r ^. topLeft
            br = r ^. bottomRight
        in ((tl ^. x) <= (br ^. x)) && ((tl ^. y) >= (br ^. y))
+    prop "width is never negative" $ \(r :: Rectangle) -> (rectWidth r) >= 0
+    prop "height is never negative" $ \(r :: Rectangle) -> (rectHeight r) >= 0
+    prop "area is never negative" $ \(r :: Rectangle) -> (rectArea r) >= 0
     prop "mappended to itself does not change " $
       \(ra :: Rectangle) -> ra `mappend` ra == ra
     prop "mappend is relektive" $
@@ -43,4 +46,6 @@ spec = parallel $ do
     prop "mappend never results in smaller rectangle " $
       \(ra :: Rectangle)(rb :: Rectangle) ->
        ((rectArea $ mappend ra rb) >= rectArea ra) && ((rectArea $ mappend ra rb) >= rectArea ra)
+
+t = hspec spec
 
