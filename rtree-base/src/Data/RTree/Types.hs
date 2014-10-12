@@ -19,7 +19,7 @@ import           Data.Text           (Text)
 import           Data.Typeable
 
 
-class (Monad m, HasRectangle t) => RTreeBackend b (m :: * -> *) t | b -> m where
+class (Monad m, HasRectangle t) => RTreeBackend b (m :: * -> *) t | b -> m, b -> t where
   type RTreePageKey b t :: *
   pageInsert :: b -> RTreePage b t -> m (RTreePageKey b t)
   pageGet :: b -> RTreePageKey b t -> m (RTreePage b t)
@@ -27,12 +27,6 @@ class (Monad m, HasRectangle t) => RTreeBackend b (m :: * -> *) t | b -> m where
   pageSetData :: b -> RTreePageKey b t -> Maybe t -> m ()
   pageSetChildren :: b -> RTreePageKey b t -> [RTreePageKey b t]  -> m ()
   pageSetBoundingBox :: b -> RTreePageKey b t -> Rectangle -> m ()
-  mkObjectPage :: b -> Text -> t -> RTreePage b t
-  mkObjectPage b name obj =
-    MkRTreePage { _pageData = Just obj
-                , _pageChildren = mempty
-                , _pageRTreeName = name
-                , _pageBoundingBox = obj ^. rectangle}
 
 data RTreePage b t =
   MkRTreePage { _pageData        :: Maybe t
