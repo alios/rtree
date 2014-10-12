@@ -9,5 +9,7 @@ module Data.RTree
 
 import           Data.RTree.Classes
 import           Data.RTree.Geometry
+import           Data.RTree.Tables
 import           Data.RTree.Types
+
 

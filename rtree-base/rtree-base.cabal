@@ -51,7 +51,8 @@ library
   exposed-modules:     Data.RTree,
                        Data.RTree.Types, 
                        Data.RTree.Classes,
-                       Data.RTree.Geometry
+                       Data.RTree.Geometry,
+                       Data.RTree.Tables
 
   
   -- Modules included in this library but not exported.
@@ -73,6 +74,8 @@ library
   build-depends:       base >=4.7 && <5.0,
                        text, 
                        lens >=4.4,
+                       tables >= 0.4,
+                       stm >= 2.4,
                        hspec, QuickCheck 
   
   -- Directories containing source files.
@@ -87,4 +90,12 @@ test-suite hspec
     default-language: Haskell2010
     hs-source-dirs:   test-suite
     main-is:          Spec.hs
+    type:             exitcode-stdio-1.0
+
+
+benchmark criterion
+    build-depends:    base, rtree-base, criterion >= 1.0
+    default-language: Haskell2010
+    hs-source-dirs:   benchmark
+    main-is:          Bench.hs
     type:             exitcode-stdio-1.0

@@ -24,12 +24,8 @@ makeClassy ''Rectangle
 
 mkRectangle' :: Double -> Double -> Double -> Double -> Rectangle
 mkRectangle' x1 y1 x2 y2 =
-  let top = max y1 y2
-      bottom = min y1 y2
-      right = max x1 x2
-      left = min x1 x2
-      tl = Point { _y = top, _x = left}
-      br = Point { _y = bottom, _x = right}
+  let tl = Point { _y = max y1 y2, _x = min x1 x2}
+      br = Point { _y = min y1 y2, _x = max x1 x2}
   in Rectangle { _topLeft = tl, _bottomRight = br}
 
 mkRectangle :: Point -> Point -> Rectangle
@@ -74,7 +70,6 @@ pointInRect r p =
       px = p ^. x
       py = p ^. y
   in (px >= lx) && (px <= rx) && (py >= by) && (py <= ty)
-
 
 rectangleIn :: (HasRectangle r1, HasRectangle r2) => r1 -> r2 -> Bool
 rectangleIn ra = any (pointInRect ra) . rect4points

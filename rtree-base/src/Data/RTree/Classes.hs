@@ -1,7 +1,9 @@
+{-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE UndecidableInstances   #-}
 
 module Data.RTree.Classes where
 
@@ -11,7 +13,39 @@ import           Data.RTree.Geometry
 import           Data.RTree.Types
 import           Data.Text           (Text)
 
-class (RTreeBackend b m, RTreeAlgo a) => RTreeFrontend b a m | b -> m where
+
+
+class (RTreeBackend b m t) => RTreeFrontend b m t where
+  locatePage :: b -> t -> m (RTreePageKey b t)
+  splitPage ::  b -> RTreePageKey b t-> m (RTreePage b t, RTreePage b t)
+  rTreeCreate :: b -> a -> Text -> m (RTree b m t)
+  rTreeInsert :: RTree b m t -> t -> m (RTreePageKey b t)
+  rTreeQuery :: (HasRectangle bbox) => RTree b m t -> bbox -> m [t]
+  rTreeLoad :: Text -> m (RTree b m t)
+  rTreeDestroy :: RTree b m t -> m Bool
+  rTreeDelete :: RTree b m t -> RTreePageKey b t -> m Bool
+
+  rTreeQuery tr bbox =
+    let b = tr ^. rTreeBackend
+        rTreeQuery' p =
+          if (not $ p `rectangleIn` bbox)
+             then return []
+             else case (p ^. pageData) of
+                    Just obj -> return [obj]
+                    Nothing -> do
+                      cps <- sequence . map (pageGet b) $ p ^. pageChildren
+                      cps' <- sequence . map rTreeQuery' $ cps
+                      return $ concat cps'
+    in do
+      rp <- pageGet b $ tr ^. rTreeRootNode
+      rTreeQuery' rp
+
+
+
+
+
+{-
+class (RTreeBackend b m t, RTreeAlgo a t) => RTreeFrontend b a m t where
   rTreeCreate :: b -> a -> Text -> m (RTree b a m t)
   rTreeCreate b a name =
     let  rootPage :: RTreePage b t
@@ -40,9 +74,9 @@ class (RTreeBackend b m, RTreeAlgo a) => RTreeFrontend b a m | b -> m where
     in do leafPageId <- locatePage a b obj
           leafPage <- pageGet b leafPageId
           pId <- pageInsert b p
-          pageSetChildren b leafPageId $ pId : leafPage ^. pageChildren
           pageSetBoundingBox b leafPageId $
             (leafPage ^. rectangle) `mappend` (obj ^. rectangle)
+          pageSetChildren b leafPageId $ pId : leafPage ^. pageChildren
           return pId
   rTreeQuery :: (HasRectangle bbox) => RTree b a m t -> bbox -> m [t]
   rTreeQuery tr bbox =
@@ -58,10 +92,9 @@ class (RTreeBackend b m, RTreeAlgo a) => RTreeFrontend b a m | b -> m where
                       return $ concat cps'
     in do
       rp <- pageGet b $ tr ^. rTreeRootNode
-      rTreeQuery' rp
-  rTreeLoad :: Text -> m (RTree b a m t)
+      rTreeQuery' rp  rTreeLoad :: Text -> m (RTree b a m t)
   rTreeDestroy :: RTree b a m t -> m Bool
   rTreeDelete :: RTree b a m t -> RTreePageKey b t -> m Bool
 
 
-
+-}

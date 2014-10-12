@@ -13,23 +13,26 @@ module Data.RTree.Types where
 
 import           Control.Lens
 import           Data.Data
+import           Data.Monoid
 import           Data.RTree.Geometry
 import           Data.Text           (Text)
 import           Data.Typeable
 
-class RTreeAlgo a where
-  locatePage :: (RTreeBackend b m, HasRectangle bbox) => a ->  b -> bbox -> m (RTreePageKey b t)
-  splitPage ::  (RTreeBackend b m) => a -> b -> RTreePageKey b t-> m (RTreePage b t, RTreePage b t)
 
-class (Monad m) => RTreeBackend b (m :: * -> *) | b -> m where
-  type RTreePageKey b :: * -> *
+class (Monad m, HasRectangle t) => RTreeBackend b (m :: * -> *) t | b -> m where
+  type RTreePageKey b t :: *
   pageInsert :: b -> RTreePage b t -> m (RTreePageKey b t)
   pageGet :: b -> RTreePageKey b t -> m (RTreePage b t)
   pageDelete :: b -> RTreePageKey b t -> m Bool
   pageSetData :: b -> RTreePageKey b t -> Maybe t -> m ()
   pageSetChildren :: b -> RTreePageKey b t -> [RTreePageKey b t]  -> m ()
-  pageSetBoundingBox :: (HasRectangle bbox) => b -> RTreePageKey b t -> bbox -> m ()
-
+  pageSetBoundingBox :: b -> RTreePageKey b t -> Rectangle -> m ()
+  mkObjectPage :: b -> Text -> t -> RTreePage b t
+  mkObjectPage b name obj =
+    MkRTreePage { _pageData = Just obj
+                , _pageChildren = mempty
+                , _pageRTreeName = name
+                , _pageBoundingBox = obj ^. rectangle}
 
 data RTreePage b t =
   MkRTreePage { _pageData        :: Maybe t
@@ -42,9 +45,8 @@ makeClassy ''RTreePage
 instance HasRectangle (RTreePage b t) where
   rectangle = pageBoundingBox
 
-data RTree b a (m :: * -> *) t =
+data RTree b (m :: * -> *) t =
   MkRTree { _rTreeBackend  :: b
-          , _rTreeAlgo     :: a
           , _rTreeName     :: Text
           , _rTreeRootNode :: RTreePageKey b t
           } deriving (Typeable)
