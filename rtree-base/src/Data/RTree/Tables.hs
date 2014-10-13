@@ -14,7 +14,10 @@ import           Control.Monad.STM
 import           Data.Monoid
 import           Data.RTree.Geometry
 import           Data.RTree.Types
+import           Data.Set                     (Set)
+import qualified Data.Set                     as Set
 import           Data.Table
+
 
 data TabularPage t =
   TabularPage { _tabularId   :: Int
@@ -45,11 +48,14 @@ instance Tabular (TabularPage t) where
  type PKT (TabularPage t) = Int
  data Key k (TabularPage t) b where
    PageId :: Key Primary (TabularPage t) Int
+   PageChildren :: Key Inverted (TabularPage t) (Set (PKT (TabularPage t)))
+
  data Tab (TabularPage t) i = PageTab (i Primary Int)
 
  autoTab = autoIncrement tabularId
 
  fetch PageId = _tabularId
+-- fetch PageChildren = Set.fromList . _pageChildren . _tabularPage
 
  primary = PageId
  primarily PageId i = i
