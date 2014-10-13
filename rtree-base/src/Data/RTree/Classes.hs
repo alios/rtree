@@ -8,27 +8,25 @@
 module Data.RTree.Classes where
 
 import           Control.Lens
+import           Data.Maybe          (fromJust)
 import           Data.Monoid
 import           Data.RTree.Geometry
 import           Data.RTree.Types
 import           Data.Text           (Text)
 
 
-
 class (RTreeBackend b m t) => RTreeFrontend a b m t where
   locatePage :: a -> b -> t -> RTreePageKey b t -> m (RTreePageKey b t)
   splitPage ::  a -> b -> t -> RTreePageKey b t-> m (RTreePageKey b t)
   maxChildren :: a -> b -> Int
-  rTreeLoad :: Text -> m (RTree b m t)
-  rTreeDestroy :: RTree b m t -> m Bool
-  rTreeDelete :: RTree b m t -> RTreePageKey b t -> m Bool
+  minChildren :: a -> b -> Int
 
   rTreeQuery :: (HasRectangle bbox) => RTree b m t -> bbox -> m [t]
   rTreeQuery tr bbox =
     let b = tr ^. rTreeBackend
         rTreeQuery' p =
           if (not $ p `rectangleIn` bbox)
-             then return []
+             then return mempty
              else case (p ^. pageData) of
                     Just obj -> return [obj]
                     Nothing -> do
@@ -76,5 +74,17 @@ class (RTreeBackend b m t) => RTreeFrontend a b m t where
                      doInsert leafPageId' leafPage'
              else doInsert leafPageId leafPage
 
-
-
+  rTreeDelete :: a -> b -> RTree b m t -> RTreePageKey b t -> m ()
+  rTreeDelete a b tr pId = do
+    leafPageId <- pageGetParentKey b pId
+    leafPage <- pageGet b leafPageId
+    let cs = leafPage ^. pageChildren . to (filter $ (==) pId)
+    csM <- sequence . map (pageGet b) $ cs
+    let bbox = mconcat $ map (view rectangle) csM
+    pageSetChildren b leafPageId cs
+    pageSetBoundingBox b leafPageId bbox
+    pageDelete b pId
+    if (length cs >= minChildren a b)
+      then return ()
+      else let csObj = map (fromJust . view pageData) csM
+           in undefined

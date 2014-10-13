@@ -19,10 +19,12 @@ import           Data.Text           (Text)
 import           Data.Typeable
 
 
-class (Monad m, HasRectangle t) => RTreeBackend b (m :: * -> *) t | b -> m, b -> t where
+class (Monad m, HasRectangle t, Eq (RTreePageKey b t) ) =>
+      RTreeBackend b (m :: * -> *) t | b -> m, b -> t where
   type RTreePageKey b t :: *
   pageInsert :: b -> RTreePage b t -> m (RTreePageKey b t)
   pageGet :: b -> RTreePageKey b t -> m (RTreePage b t)
+  pageGetParentKey :: b -> RTreePageKey b t -> m (RTreePageKey b t)
   pageDelete :: b -> RTreePageKey b t -> m Bool
   pageSetData :: b -> RTreePageKey b t -> Maybe t -> m ()
   pageSetChildren :: b -> RTreePageKey b t -> [RTreePageKey b t]  -> m ()
