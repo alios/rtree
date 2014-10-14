@@ -5,7 +5,7 @@
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TypeFamilies           #-}
 
-module Data.RTree.Tables where
+module Data.RTree.Tables (TabularBackend) where
 
 import           Control.Applicative          hiding (empty)
 import           Control.Concurrent.STM.TMVar

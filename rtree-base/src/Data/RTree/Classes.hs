@@ -5,6 +5,7 @@
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE UndecidableInstances   #-}
 
+-- | this module contains the user api for an 'RTree'
 module Data.RTree.Classes where
 
 import           Control.Lens
@@ -16,9 +17,11 @@ import           Data.Set            (Set)
 import qualified Data.Set            as Set
 import           Data.Text           (Text)
 
-
+-- | The 'RTreeFrontend' provides the user api for an 'RTree'.
+--   Different algorithms can be implemented by overwriting
+--  'locatePage', 'splitPage', 'maxChildren', 'minChildren'.
 class (Ord t, RTreeBackend b m t) => RTreeFrontend a b m t where
-
+  -- | create a new empty 'RTree'
   rTreeCreate :: b -> Text -> m (RTree b m t)
   rTreeCreate b name =
     let  rootPage =
@@ -34,6 +37,7 @@ class (Ord t, RTreeBackend b m t) => RTreeFrontend a b m t where
                        }
     in do pageInsert b rootPage >>= return . rtree
 
+  -- | insert an object into 'RTree'. returns the 'RTreePageKey' of the inserted object.
   rTreeInsert :: a -> RTree b m t -> t -> m (RTreePageKey b t)
   rTreeInsert a tr obj =
     let b = tr ^. rTreeBackend
@@ -56,6 +60,7 @@ class (Ord t, RTreeBackend b m t) => RTreeFrontend a b m t where
                      doInsert leafPageId' leafPage'
              else doInsert leafPageId leafPage
 
+  -- | returns a 'Set' of all objects in 'RTree' within a given bounding box.
   rTreeQuery :: (HasRectangle bbox) => RTree b m t -> bbox -> m (Set t)
   rTreeQuery tr bbox =
     let b = tr ^. rTreeBackend
@@ -72,6 +77,7 @@ class (Ord t, RTreeBackend b m t) => RTreeFrontend a b m t where
       rp <- pageGet b $ tr ^. rTreeRootNode
       rTreeQuery' rp
 
+  -- | delete an object from a 'RTree'.
   rTreeDelete :: a -> b -> RTree b m t -> RTreePageKey b t -> m ()
   rTreeDelete a b tr pId = do
     leafPageId_ <- pageGetParentKey b pId
@@ -88,7 +94,11 @@ class (Ord t, RTreeBackend b m t) => RTreeFrontend a b m t where
       else let csObj = fmap (fromJust . view pageData) csM
            in undefined
 
+  -- | returns a page suitable for inseration of a new object.
   locatePage :: a -> b -> t -> RTreePageKey b t -> m (RTreePageKey b t)
+  -- | split a given page.
   splitPage ::  a -> b -> t -> RTreePageKey b t-> m (RTreePageKey b t)
+  -- | the upper limit of children for a page.
   maxChildren :: a -> b -> Int
+  -- | the lower limit of children for a page
   minChildren :: a -> b -> Int

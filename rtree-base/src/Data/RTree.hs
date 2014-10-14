@@ -1,11 +1,16 @@
 
-module Data.RTree
-       ( RTreeFrontend(..)
-       , RTreeBackend, RTree, RTreePage, RTreePageKey
-       , Point (..), point, x, y, point2Rectangle
-       , Rectangle (..), mkRectangle, rectangle, topLeft, bottomRight
-       , rectangleIn, rectWidth, rectHeight, rectArea, rectAreaGrow
-       ) where
+module Data.RTree(
+  -- * The RTree frontend
+  RTreeFrontend(..),
+  RTree,
+  -- * The RTree backends
+  TabularBackend (..),
+  -- * Geometry
+  -- ** Rectangle
+  Rectangle (..), rectangle, topLeft, bottomRight,
+  -- ** Point
+  Point (..), point, x, y,
+  ) where
 
 import           Data.RTree.Classes
 import           Data.RTree.Geometry
