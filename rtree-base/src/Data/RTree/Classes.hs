@@ -18,26 +18,6 @@ import           Data.Text           (Text)
 
 
 class (Ord t, RTreeBackend b m t) => RTreeFrontend a b m t where
-  locatePage :: a -> b -> t -> RTreePageKey b t -> m (RTreePageKey b t)
-  splitPage ::  a -> b -> t -> RTreePageKey b t-> m (RTreePageKey b t)
-  maxChildren :: a -> b -> Int
-  minChildren :: a -> b -> Int
-
-  rTreeQuery :: (HasRectangle bbox) => RTree b m t -> bbox -> m (Set t)
-  rTreeQuery tr bbox =
-    let b = tr ^. rTreeBackend
-        rTreeQuery' p =
-          if (not $ p `rectangleIn` bbox)
-             then return mempty
-             else case (p ^. pageData) of
-                    Just obj -> return $ Set.singleton obj
-                    Nothing -> do
-                      cps <- sequence . fmap (pageGet b) $ Set.toList $ p ^. pageChildren
-                      cps' <- sequence . fmap rTreeQuery' $ cps
-                      return $ mconcat cps'
-    in do
-      rp <- pageGet b $ tr ^. rTreeRootNode
-      rTreeQuery' rp
 
   rTreeCreate :: b -> Text -> m (RTree b m t)
   rTreeCreate b name =
@@ -76,6 +56,22 @@ class (Ord t, RTreeBackend b m t) => RTreeFrontend a b m t where
                      doInsert leafPageId' leafPage'
              else doInsert leafPageId leafPage
 
+  rTreeQuery :: (HasRectangle bbox) => RTree b m t -> bbox -> m (Set t)
+  rTreeQuery tr bbox =
+    let b = tr ^. rTreeBackend
+        rTreeQuery' p =
+          if (not $ p `rectangleIn` bbox)
+             then return mempty
+             else case (p ^. pageData) of
+                    Just obj -> return $ Set.singleton obj
+                    Nothing -> do
+                      cps <- sequence . fmap (pageGet b) $ Set.toList $ p ^. pageChildren
+                      cps' <- sequence . fmap rTreeQuery' $ cps
+                      return $ mconcat cps'
+    in do
+      rp <- pageGet b $ tr ^. rTreeRootNode
+      rTreeQuery' rp
+
   rTreeDelete :: a -> b -> RTree b m t -> RTreePageKey b t -> m ()
   rTreeDelete a b tr pId = do
     leafPageId_ <- pageGetParentKey b pId
@@ -92,4 +88,7 @@ class (Ord t, RTreeBackend b m t) => RTreeFrontend a b m t where
       else let csObj = fmap (fromJust . view pageData) csM
            in undefined
 
-
+  locatePage :: a -> b -> t -> RTreePageKey b t -> m (RTreePageKey b t)
+  splitPage ::  a -> b -> t -> RTreePageKey b t-> m (RTreePageKey b t)
+  maxChildren :: a -> b -> Int
+  minChildren :: a -> b -> Int

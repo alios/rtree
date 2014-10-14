@@ -40,7 +40,7 @@ takeTable :: TabularBackend t -> STM (Table (TabularPage t))
 takeTable = takeTMVar . view tabularTable
 
 putTable :: TabularBackend t -> Table (TabularPage t) -> STM ()
-putTable b = putTMVar (b ^. tabularTable)
+putTable b = putTMVar $ b ^. tabularTable
 
 
 
@@ -115,11 +115,6 @@ setTabularBoundingBox = setTabularValue tabularBoundingBox
 pageSet s b pid v = atomically $ do
     tbl <- takeTable b
     putTable b $ setTabularValue s tbl pid v
-
---lensData k x = tabularData . (with PageId (==) k) & each x
-
-
-
 
 
 tabularChildren p = tabularPage . pageChildren $ p
