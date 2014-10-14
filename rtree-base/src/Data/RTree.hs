@@ -1,7 +1,7 @@
 
 module Data.RTree
        ( RTreeFrontend(..)
-       , RTreeBackend, RTreeAlgo, RTree, RTreePage, RTreePageKey
+       , RTreeBackend, RTree, RTreePage, RTreePageKey
        , Point (..), point, x, y, point2Rectangle
        , Rectangle (..), mkRectangle, rectangle, topLeft, bottomRight
        , rectangleIn, rectWidth, rectHeight, rectArea, rectAreaGrow
