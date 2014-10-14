@@ -50,19 +50,20 @@ instance Tabular (TabularPage t) where
    PageId :: Key Primary (TabularPage t) Int
    PageChildren :: Key Inverted (TabularPage t) (Set (PKT (TabularPage t)))
 
- data Tab (TabularPage t) i = PageTab (i Primary Int)
+ data Tab (TabularPage t) i = PageTab (i Primary Int) (i Inverted (Set (PKT (TabularPage t))))
 
  autoTab = autoIncrement tabularId
 
  fetch PageId = _tabularId
--- fetch PageChildren = Set.fromList . _pageChildren . _tabularPage
+ fetch PageChildren =  _pageChildren . _tabularPage
 
  primary = PageId
  primarily PageId i = i
 
- mkTab f = PageTab <$> f PageId
- forTab (PageTab i) f = PageTab <$> f PageId i
- ixTab (PageTab i) PageId = i
+ mkTab f = PageTab <$> f PageId <*> f PageChildren
+ forTab (PageTab i s) f = PageTab <$> f PageId i <*> f PageChildren s
+ ixTab (PageTab i s) PageId = i
+ ixTab (PageTab i s) PageChildren = s
 
 
 instance (HasRectangle t) => RTreeBackend (TabularBackend t) IO t where
@@ -87,6 +88,11 @@ instance (HasRectangle t) => RTreeBackend (TabularBackend t) IO t where
   pageSetData = pageSet tabularData
   pageSetChildren = pageSet tabularChildren
   pageSetBoundingBox = pageSet tabularBoundingBox
+
+  pageGetParentKey b cId = do
+    tbl <- atomically $ readTable b
+    let r = tbl ^. withAny PageChildren [cId]
+    return $ fmap _tabularId $ r ^? ix 0
 
 getPageTable :: Table (TabularPage t) -> PKT (TabularPage t) -> Maybe (RTreePage (TabularBackend t) t)
 getPageTable tbl pid = do

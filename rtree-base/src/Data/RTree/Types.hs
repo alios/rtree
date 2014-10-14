@@ -25,7 +25,7 @@ class (Monad m, HasRectangle t, Ord (RTreePageKey b t) ) =>
   type RTreePageKey b t :: *
   pageInsert :: b -> RTreePage b t -> m (RTreePageKey b t)
   pageGet :: b -> RTreePageKey b t -> m (RTreePage b t)
-  pageGetParentKey :: b -> RTreePageKey b t -> m (RTreePageKey b t)
+  pageGetParentKey :: b -> RTreePageKey b t -> m (Maybe (RTreePageKey b t))
   pageDelete :: b -> RTreePageKey b t -> m Bool
   pageSetData :: b -> RTreePageKey b t -> Maybe t -> m ()
   pageSetChildren :: b -> RTreePageKey b t -> Set (RTreePageKey b t) -> m ()
