@@ -60,6 +60,12 @@ class (Ord t, RTreeBackend b m t) => RTreeFrontend a b m t where
                      doInsert leafPageId' leafPage'
              else doInsert leafPageId leafPage
 
+  -- | insert multiple objects into 'RTree'. returns the 'Set' of 'RTreePageKey' of
+  --   the inserted objects.
+  rTreeMassInsert :: a -> RTree b m t -> [t] -> m (Set (RTreePageKey b t))
+  rTreeMassInsert a tr objs =
+    (sequence . fmap (rTreeInsert a tr) $ objs) >>= return . Set.fromList
+
   -- | returns a 'Set' of all objects in 'RTree' within a given bounding box.
   rTreeQuery :: (HasRectangle bbox) => RTree b m t -> bbox -> m (Set t)
   rTreeQuery tr bbox =
@@ -77,7 +83,7 @@ class (Ord t, RTreeBackend b m t) => RTreeFrontend a b m t where
       rp <- pageGet b $ tr ^. rTreeRootNode
       rTreeQuery' rp
 
-  -- | delete an object from a 'RTree'.
+  -- | delete an object from 'RTree'.
   rTreeDelete :: a -> b -> RTree b m t -> RTreePageKey b t -> m ()
   rTreeDelete a b tr pId = do
     leafPageId_ <- pageGetParentKey b pId
