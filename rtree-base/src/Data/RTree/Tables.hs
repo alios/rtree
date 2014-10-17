@@ -2,20 +2,20 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE GADTs                  #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE Rank2Types             #-}
 {-# LANGUAGE TemplateHaskell        #-}
 {-# LANGUAGE TypeFamilies           #-}
 
+-- | An 'RTreeBackend' Implementation using memory mapped tables from 'Data.Table'
 module Data.RTree.Tables (TabularBackend) where
 
 import           Control.Applicative          hiding (empty)
 import           Control.Concurrent.STM.TMVar
 import           Control.Lens
 import           Control.Monad.STM
-import           Data.Monoid
 import           Data.RTree.Geometry
 import           Data.RTree.Types
 import           Data.Set                     (Set)
-import qualified Data.Set                     as Set
 import           Data.Table
 
 
@@ -23,15 +23,22 @@ data TabularPage t =
   TabularPage { _tabularId   :: Int
               , _tabularPage :: RTreePage (TabularBackend t) t
               }
+
+
+
+newTabularPage :: RTreePage (TabularBackend t) t -> TabularPage t
 newTabularPage = TabularPage 0
 
-
+-- | An 'RTreeBackend' Implementation using memory mapped tables from 'Data.Table'
 newtype TabularBackend t =
   TabularBackend { _tabularTable :: TMVar (Table (TabularPage t)) }
 
 
 makeLenses ''TabularBackend
 makeLenses ''TabularPage
+
+instance HasRTreePage (TabularPage t) (TabularBackend t) t where
+  rTreePage = tabularPage
 
 readTable :: TabularBackend t -> STM (Table (TabularPage t))
 readTable = readTMVar . view tabularTable
@@ -62,12 +69,14 @@ instance Tabular (TabularPage t) where
 
  mkTab f = PageTab <$> f PageId <*> f PageChildren
  forTab (PageTab i s) f = PageTab <$> f PageId i <*> f PageChildren s
- ixTab (PageTab i s) PageId = i
- ixTab (PageTab i s) PageChildren = s
+ ixTab (PageTab i _) PageId = i
+ ixTab (PageTab _ s) PageChildren = s
 
 
 instance (HasRectangle t) => RTreeBackend (TabularBackend t) IO t where
   type RTreePageKey (TabularBackend t) t = PKT (TabularPage t)
+
+  backendCreate = newTMVarIO empty >>= return . TabularBackend
 
   pageInsert b p = atomically $ do
     tbl <- takeTable b
@@ -99,24 +108,39 @@ getPageTable tbl pid = do
   p <- getPageTable' tbl pid
   return $ p ^. tabularPage
 
+getPageTable' :: Table (TabularPage t) -> Int -> Maybe (TabularPage t)
 getPageTable' tbl pid =
-    let x = tbl ^. (with PageId (==) pid)
-    in x ^? ix 0
+    let res = tbl ^. (with PageId (==) pid)
+    in res ^? ix 0
 
+
+setTabularChildren :: Table (TabularPage t) -> Int -> Set Int -> Table (TabularPage t)
+setTabularChildren = setTabularValue tabularChildren
+
+setTabularData :: Table (TabularPage t) -> Int -> Maybe t -> Table (TabularPage t)
+setTabularData = setTabularValue tabularData
+
+setTabularBoundingBox :: Table (TabularPage t) -> Int -> Rectangle -> Table (TabularPage t)
+setTabularBoundingBox = setTabularValue tabularBoundingBox
+
+setTabularValue :: ASetter (TabularPage t) (TabularPage t) a b
+                   -> Table (TabularPage t) -> Int -> b -> Table (TabularPage t)
 setTabularValue s tbl pid v =
   case (getPageTable' tbl pid) of
     Nothing -> error "setTabularValue: unable to find page with key."
     Just p -> insert (set s v p) $ deleteWith PageId (==) pid tbl
 
-setTabularChildren = setTabularValue tabularChildren
-setTabularData = setTabularValue tabularData
-setTabularBoundingBox = setTabularValue tabularBoundingBox
-
+pageSet :: ASetter (TabularPage t) (TabularPage t) a b
+           -> TabularBackend t -> Int -> b -> IO ()
 pageSet s b pid v = atomically $ do
     tbl <- takeTable b
     putTable b $ setTabularValue s tbl pid v
 
-
+tabularChildren :: Lens' (TabularPage t) (Set Int)
 tabularChildren p = tabularPage . pageChildren $ p
+
+tabularData :: Lens' (TabularPage t) (Maybe t)
 tabularData p = tabularPage . pageData $ p
+
+tabularBoundingBox :: Lens' (TabularPage t) Rectangle
 tabularBoundingBox p = tabularPage . pageBoundingBox $ p

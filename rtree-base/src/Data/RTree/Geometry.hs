@@ -5,9 +5,9 @@
 module Data.RTree.Geometry where
 
 import           Control.Lens
-import           Data.Data     (Data (..))
+import           Data.Data     (Data)
 import           Data.Monoid
-import           Data.Typeable (Typeable (..))
+import           Data.Typeable (Typeable)
 
 data Point =
   Point { _x :: !Double

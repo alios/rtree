@@ -85,7 +85,7 @@ class (Ord t, RTreeBackend b m t) => RTreeFrontend a b m t where
 
   -- | delete an object from 'RTree'.
   rTreeDelete :: a -> b -> RTree b m t -> RTreePageKey b t -> m ()
-  rTreeDelete a b tr pId = do
+  rTreeDelete a b _ pId = do
     leafPageId_ <- pageGetParentKey b pId
     let leafPageId = maybe (error "rTreeDelete: unable to find page") id $ leafPageId_
     leafPage <- pageGet b leafPageId
@@ -94,7 +94,7 @@ class (Ord t, RTreeBackend b m t) => RTreeFrontend a b m t where
     let bbox = mconcat $ fmap (view rectangle) csM
     pageSetChildren b leafPageId cs
     pageSetBoundingBox b leafPageId bbox
-    pageDelete b pId
+    _ <- pageDelete b pId
     if (Set.size cs >= minChildren a b)
       then return ()
       else let csObj = fmap (fromJust . view pageData) csM
