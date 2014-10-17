@@ -40,6 +40,9 @@ makeLenses ''TabularPage
 instance HasRTreePage (TabularPage t) (TabularBackend t) t where
   rTreePage = tabularPage
 
+instance HasRectangle (TabularPage t) where
+  rectangle = rTreePage . rectangle
+
 readTable :: TabularBackend t -> STM (Table (TabularPage t))
 readTable = readTMVar . view tabularTable
 
